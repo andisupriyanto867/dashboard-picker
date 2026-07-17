@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Picking Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#070c1c;
+    --bg-1:#0d1730;
+    --bg-2:#111e3f;
+    --line:#233156;
+    --line-soft:#1a2647;
+    --gold:#f2b84b;
+    --gold-dim:#a9863a;
+    --white:#eef2fb;
+    --muted:#7c88ac;
+    --green:#3ecf8e;
+    --orange:#f2994a;
+    --blue:#4fa3f7;
+    --red:#ff5c5c;
+    --purple:#9b8cff;
+    --cream:#ece3c4;
+    --cream-2:#f5efd9;
+    --cream-line:#cabf94;
+    --cream-text:#2a2312;
+    --cream-muted:#7a7250;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 12% 8%, #10203f 0%, transparent 45%),
+      radial-gradient(circle at 90% 90%, #0e1a38 0%, transparent 50%),
+      var(--bg-0);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    padding:clamp(5px,.9vw,12px);
+    gap:clamp(4px,.55vw,8px);
+  }
+  .eyebrow{
+    font-family:'Oswald',sans-serif;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-size:clamp(8px,.5vw,10px);
+    color:var(--cream-muted);
+  }
+  /* ===== HEADER (cream, mirip papan info) ===== */
+  header{
+    display:flex;
+    align-items:stretch;
+    gap:clamp(6px,.8vw,10px);
+    background:linear-gradient(180deg,var(--cream-2),var(--cream));
+    border:1px solid var(--cream-line);
+    border-radius:var(--radius);
+    padding:clamp(5px,.6vw,10px) clamp(10px,1.2vw,18px);
+    box-shadow:0 2px 10px rgba(0,0,0,.25);
+    flex-shrink:0;
+  }
+  .brand{display:flex;align-items:center;gap:12px;flex:1.4;min-width:0;}
+  .brand-icon{
+    width:clamp(90px,8vw,150px);height:clamp(38px,3.4vw,54px);
+    border-radius:6px;flex-shrink:0;
+    overflow:hidden;
+    border:2px solid var(--gold-dim);
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+    background:#ffffff;
+    display:flex;align-items:center;justify-content:center;
+    padding:4px 8px;
+  }
+  .brand-icon img{
+    width:100%;height:100%;object-fit:contain;display:block;
+  }
+  .brand-text h1{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:clamp(13px,1.1vw,19px);line-height:1.1;
+    letter-spacing:.01em;color:var(--cream-text);
+  }
+  .brand-text p{
+    font-family:'Oswald',sans-serif;color:var(--gold-dim);
+    font-size:clamp(9px,.58vw,11px);letter-spacing:.12em;
+    text-transform:uppercase;margin-top:2px;
+  }
+  .brand-sync{
+    display:flex;align-items:center;gap:5px;margin-top:3px;
+    font-family:'JetBrains Mono',monospace;font-size:clamp(8px,.48vw,10px);color:var(--cream-muted);
+    max-width:min(46vw,420px);overflow:hidden;
+  }
+  .brand-sync span:last-child{
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .brand-sync .sdot{width:6px;height:6px;border-radius:50%;background:var(--cream-muted);flex-shrink:0;}
+  .brand-sync.live .sdot{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .brand-sync.live{color:#1c8f5f;}
+  .brand-sync.down .sdot{background:var(--red);box-shadow:0 0 6px var(--red);}
+  .brand-sync.down{color:#c23e3e;}
+  .hdr-divider{width:1px;background:var(--cream-line);}
+  .hdr-block{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 clamp(8px,1.1vw,16px);}
+  .hdr-block .val{
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:clamp(14px,1.4vw,22px);color:var(--gold-dim);letter-spacing:.02em;
+  }
+  .hdr-block.date .val{color:var(--cream-text);font-size:clamp(11px,1vw,16px);}
+  .shift-badge{
+    display:flex;flex-direction:column;justify-content:center;gap:3px;
+    padding:0 clamp(8px,1.1vw,16px);
+  }
+  .shift-badge .pill{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:clamp(11px,.95vw,15px);letter-spacing:.06em;
+    color:var(--bg-0);background:var(--gold);
+    padding:3px 11px;border-radius:5px;display:inline-block;width:fit-content;
+  }
+  /* ===== STAT ROW (cream cards) ===== */
+  .stats{
+    display:grid;grid-template-columns:repeat(5,1fr);
+    gap:clamp(6px,.7vw,10px);
+    flex-shrink:0;
+  }
+  .stat{
+    background:linear-gradient(180deg,var(--cream-2),var(--cream));
+    border:1px solid var(--cream-line);border-radius:var(--radius);
+    padding:clamp(6px,.7vw,10px);
+    display:flex;align-items:center;gap:9px;
+    transition:border-color .3s ease;
+    box-shadow:0 2px 8px rgba(0,0,0,.18);
+  }
+  .stat .ic{font-size:clamp(13px,1.1vw,18px);}
+  .stat .lbl{
+    font-family:'Oswald',sans-serif;font-size:clamp(8px,.5vw,10px);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--cream-muted);
+  }
+  .stat .num{
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:clamp(15px,1.5vw,22px);color:var(--cream-text);
+  }
+  .stat.progress{position:relative;overflow:hidden;}
+  .stat.progress .bar-track{
+    position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--cream-line);
+  }
+  .stat.progress .bar-fill{
+    position:absolute;left:0;bottom:0;height:3px;background:var(--orange);transition:width .6s ease;
+  }
+  /* ===== MAIN GRID ===== */
+  .main-grid{
+    display:grid;grid-template-columns:1fr 1.35fr;
+    gap:clamp(6px,.7vw,10px);flex:0 0 auto;min-height:0;
+  }
+  .panel{
+    background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--line);border-radius:var(--radius);
+    display:flex;flex-direction:column;overflow:hidden;
+    min-height:0;
+  }
+  .panel-title{
+    font-family:'Oswald',sans-serif;font-weight:600;text-align:center;
+    letter-spacing:.1em;text-transform:uppercase;
+    font-size:clamp(10px,.75vw,13px);
+    padding:clamp(5px,.55vw,8px);
+    border-bottom:1px solid var(--cream-line);color:var(--cream-text);
+    background:linear-gradient(180deg,var(--cream-2),var(--cream));
+    display:flex;align-items:center;justify-content:center;gap:7px;
+  }
+  .panel-title .count-badge{
+    font-family:'JetBrains Mono',monospace;font-size:clamp(9px,.55vw,11px);
+    background:rgba(242,153,74,.18);color:#b5661b;
+    padding:2px 8px;border-radius:20px;letter-spacing:0;
+  }
+  /* proses picking */
+  .proses-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(6px,1vw,12px);overflow:hidden;min-height:0;}
+  .proses-card{
+    border:1px solid var(--line);border-radius:8px;
+    background:rgba(255,255,255,.02);
+    padding:clamp(6px,1vw,12px) clamp(10px,1.2vw,16px);
+    display:flex;flex-direction:column;gap:clamp(3px,.5vw,8px);
+  }
+  .proses-row{display:flex;align-items:baseline;gap:12px;border-bottom:1px dashed var(--line-soft);padding-bottom:clamp(3px,.5vw,6px);}
+  .proses-row:last-child{border-bottom:none;padding-bottom:0;}
+  .proses-row .k{
+    font-family:'Oswald',sans-serif;color:var(--gold);letter-spacing:.08em;
+    text-transform:uppercase;font-size:clamp(9px,.6vw,11px);width:34%;flex-shrink:0;
+  }
+  .proses-row .v{
+    font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:clamp(12px,1.1vw,17px);color:var(--white);
+  }
+  .proses-row.dc .v{font-size:clamp(16px,1.8vw,26px);color:var(--gold);}
+  .status-chip{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:clamp(10px,.8vw,13px);
+  }
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .dot.green{background:var(--green);}
+  .dot.orange{background:var(--orange);box-shadow:0 0 8px var(--orange);animation:pulse 1.6s infinite;}
+  .dot.blue{background:var(--blue);}
+  .dot.red{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  /* antrian */
+  .antrian-body{flex:1;overflow:hidden;padding:clamp(3px,.4vw,6px) clamp(6px,.7vw,10px);}
+  table{width:100%;border-collapse:collapse;}
+  .antrian-body th{
+    font-family:'Oswald',sans-serif;color:var(--gold);text-transform:uppercase;
+    font-size:clamp(8px,.5vw,10px);letter-spacing:.08em;text-align:left;
+    padding:4px 6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg-2);
+  }
+  .antrian-body td{
+    padding:clamp(3px,.5vw,6px) 6px;font-size:clamp(10px,.75vw,13px);
+    border-bottom:1px solid var(--line-soft);font-family:'Inter',sans-serif;font-weight:500;
+  }
+  .antrian-body tr.critical td{color:var(--red);font-weight:700;}
+  .antrian-body tr.critical{background:rgba(255,92,92,.06);}
+  .antrian-body td.dc{font-family:'Oswald',sans-serif;font-weight:600;font-size:clamp(11px,.8vw,14px);}
+  .antrian-body td.no{color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  /* baris paling atas / berikutnya di antrian ditonjolkan */
+  .antrian-body tr.next-up td{
+    font-size:clamp(12px,1.1vw,17px);font-weight:700;color:var(--gold);
+    padding-top:clamp(4px,.6vw,8px);padding-bottom:clamp(4px,.6vw,8px);
+  }
+  .antrian-body tr.next-up td.no{color:var(--gold-dim);font-size:clamp(10px,.9vw,14px);}
+  .antrian-body tr.next-up.critical td{color:var(--red);}
+  .antrian-body tr.next-up td.dc{font-size:clamp(14px,1.4vw,20px);}
+  /* ===== SUMMARY TABLE ===== */
+  .summary{
+    background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    flex-shrink:0;
+  }
+  .summary table{width:100%;}
+  .summary th{
+    font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;
+    font-size:clamp(8px,.5vw,9px);color:var(--cream-text);text-align:center;
+    padding:clamp(4px,.5vw,6px) 4px;border-bottom:1px solid var(--cream-line);
+    background:linear-gradient(180deg,var(--cream-2),var(--cream));
+  }
+  .summary td{
+    text-align:center;padding:clamp(4px,.6vw,7px) 4px;border-bottom:1px solid var(--line-soft);
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(10px,.75vw,13px);
+  }
+  .summary tr:last-child td{border-bottom:none;}
+  .summary td.shift-cell{font-family:'Oswald',sans-serif;font-size:clamp(11px,.9vw,15px);color:var(--gold);}
+  .summary .badge{
+    display:inline-flex;align-items:center;gap:6px;font-family:'Oswald',sans-serif;
+    font-weight:600;font-size:clamp(9px,.65vw,11px);text-transform:uppercase;letter-spacing:.04em;
+  }
+  .summary .pct{color:var(--white);}
+  /* ===== DC LIST PANEL ===== */
+  .dc-list-panel{flex:1 1 auto;min-height:0;}
+  .dc-list-body{flex:1;overflow:auto;padding:0 clamp(8px,.8vw,12px) clamp(6px,.6vw,10px);min-height:0;}
+  .dc-list-body table{width:100%;border-collapse:collapse;}
+  .dc-list-body th{
+    font-family:'Oswald',sans-serif;color:var(--gold);text-transform:uppercase;
+    font-size:clamp(8px,.5vw,10px);letter-spacing:.07em;text-align:left;
+    padding:6px 6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg-2);z-index:1;
+  }
+  .dc-list-body td{
+    padding:clamp(4px,.6vw,7px) 6px;font-size:clamp(10px,.75vw,13px);
+    border-bottom:1px solid var(--line-soft);font-family:'Inter',sans-serif;font-weight:500;
+  }
+  .dc-list-body td.dc{font-family:'Oswald',sans-serif;font-weight:600;font-size:clamp(11px,.85vw,14px);}
+  .dc-list-body tr.done td{color:var(--muted);}
+  .dc-list-body tr.proses td{background:rgba(242,153,74,.07);}
+  .dc-list-body tr.proses td.dc{color:var(--orange);}
+  .dc-list-body tr.critical td{background:rgba(255,92,92,.07);}
+  .dc-list-body tr.critical td.dc{color:var(--red);}
+  /* ===== FOOTER ===== */
+  .foot-panel{
+    background:linear-gradient(180deg,var(--cream-2),var(--cream));
+    border:1px solid var(--cream-line);border-radius:var(--radius);
+    padding:clamp(5px,.6vw,8px) clamp(8px,1vw,14px);
+    display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(4px,.8vw,10px);
+    align-items:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.18);
+    flex-shrink:0;
+  }
+  .foot-panel .shift-info{
+    display:flex;flex-direction:column;gap:2px;
+    border-right:1px solid var(--cream-line);padding-right:clamp(6px,1vw,14px);
+  }
+  .foot-panel .shift-info:last-of-type{border-right:none;}
+  .foot-panel .shift-info .lbl{
+    font-family:'Oswald',sans-serif;font-size:clamp(8px,.5vw,9px);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--gold-dim);
+  }
+  .foot-panel .shift-info .val{
+    font-family:'JetBrains Mono',monospace;font-size:clamp(10px,.75vw,13px);color:var(--cream-text);
+  }
+  .foot-panel .update-info{
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .foot-panel .update-info .lbl{
+    font-family:'Oswald',sans-serif;font-size:clamp(8px,.5vw,9px);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--cream-muted);
+  }
+  .foot-panel .update-info .val{
+    font-family:'JetBrains Mono',monospace;font-size:clamp(9px,.65vw,12px);color:var(--cream-muted);
+  }
+  .banner{
+    background:linear-gradient(90deg,rgba(242,184,75,.08),rgba(242,184,75,.18),rgba(242,184,75,.08));
+    border:1px solid var(--gold-dim);border-radius:var(--radius);
+    text-align:center;padding:clamp(4px,.5vw,7px);
+    font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.06em;
+    font-size:clamp(9px,.7vw,12px);color:var(--gold);
+    text-transform:uppercase;
+    flex-shrink:0;
+  }
+  /* ===== CONTROLS ===== */
+  .fab{
+    position:fixed;right:18px;bottom:18px;display:flex;gap:10px;z-index:50;
+  }
+  .fab button{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--white);
+    font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.05em;
+    padding:9px 14px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px;
+    transition:.15s;
+  }
+  .fab button:hover{background:var(--bg-2);border-color:var(--gold);color:var(--gold);}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+  @media (max-width:900px){
+    header{flex-wrap:wrap;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .main-grid{grid-template-columns:1fr;}
+    .foot-panel{grid-template-columns:1fr 1fr;}
+    .foot-panel .shift-info{border-right:none;border-bottom:1px dashed var(--cream-line);padding-bottom:6px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon" id="brandIcon"><img src="https://i.supaimg.com/2c2fe634-0778-4567-93bf-17d826ecd3d2/da06317c-66aa-4cb4-9dfc-8e3510274c4a.jpg" alt="Logo" loading="eager" onerror="this.remove();document.getElementById('brandIcon').textContent='🏭';"></div>
+    <div class="brand-text">
+      <h1>Warehouse Picking</h1>
+      <p>Control Tower</p>
+      <div class="brand-sync" id="syncStatus"><span class="sdot"></span><span id="syncStatusText">Menyambungkan...</span></div>
+    </div>
+  </div>
+  <div class="hdr-divider"></div>
+  <div class="shift-badge">
+    <span class="eyebrow">Shift Aktif</span>
+    <span class="pill" id="shiftPill">—</span>
+  </div>
+  <div class="hdr-divider"></div>
+  <div class="hdr-block">
+    <span class="eyebrow">Jam Sekarang</span>
+    <span class="val" id="clockNow">--:--:--</span>
+  </div>
+  <div class="hdr-divider"></div>
+  <div class="hdr-block date">
+    <span class="eyebrow">Tanggal</span>
+    <span class="val" id="dateNow">--</span>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="stat"><div class="ic">🎯</div><div><div class="lbl">Target Shift Ini</div><div class="num" id="statTarget">0</div></div></div>
+  <div class="stat"><div class="ic">✅</div><div><div class="lbl">Selesai Picking</div><div class="num" id="statSelesai">0</div></div></div>
+  <div class="stat"><div class="ic">🟠</div><div><div class="lbl">Sedang Picking</div><div class="num" id="statProses">0</div></div></div>
+  <div class="stat"><div class="ic">📌</div><div><div class="lbl">Menunggu Antrian</div><div class="num" id="statBelum">0</div></div></div>
+  <div class="stat progress"><div class="ic">📊</div><div><div class="lbl">Progress Shift (%)</div><div class="num" id="statProgress">0%</div></div>
+    <div class="bar-track"></div><div class="bar-fill" id="statBar" style="width:0%"></div>
+  </div>
+</section>
+
+<section class="main-grid">
+  <div class="panel">
+    <div class="panel-title">Proses Picking</div>
+    <div class="proses-body" id="prosesBody">
+      <!-- filled by JS -->
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Antrian Picking <span class="count-badge" id="antrianCount">0</span></div>
+    <div class="antrian-body">
+      <table>
+        <thead>
+          <tr><th>No</th><th>DC</th><th>Jam Kirim</th><th>Shift Kirim</th></tr>
+        </thead>
+        <tbody id="antrianTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="summary">
+  <table>
+    <thead>
+      <tr>
+        <th>Shift</th><th>Target DC</th><th>Picking Selesai</th><th>Sedang Picking</th>
+        <th>Menunggu</th><th>Progress Shift</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="summaryTbody"></tbody>
+  </table>
+</section>
+
+<section class="panel dc-list-panel">
+  <div class="panel-title">Daftar DC / Kota Hari Ini</div>
+  <div class="dc-list-body">
+    <table>
+      <thead>
+        <tr>
+          <th>Shift</th><th>Prioritas</th><th>DC / Kota</th><th>Jam Kirim</th>
+          <th>Shift Kirim</th><th>Waktu Selesai</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="dcListTbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="foot-panel">
+  <div class="shift-info"><span class="lbl">Shift 1</span><span class="val">07:00 – 15:00</span></div>
+  <div class="shift-info"><span class="lbl">Shift 2</span><span class="val">15:00 – 23:00</span></div>
+  <div class="shift-info"><span class="lbl">Shift 3</span><span class="val">23:00 – 07:00</span></div>
+  <div class="update-info"><span class="lbl">Update Terakhir Data</span><span class="val" id="lastUpdate">-</span></div>
+</section>
+
+<div class="banner" id="bannerMsg">🚛 MEMUAT DATA...</div>
+
+<div class="fab">
+  <button id="fsBtn">⛶ Fullscreen</button>
+</div>
+
+<script>
+/* ================= DATA SNAPSHOT (fallback jika Apps Script belum bisa dihubungi) =================
+   Setiap baris merepresentasikan satu baris di sheet "Loading".
+   status = teks status di KOLOM I sheet, nilai yang dipakai:
+     "Selesai Picking"  -> sudah selesai
+     "Proses Picking"   -> sedang dikerjakan sekarang
+     "Menunggu"         -> masuk Antrian Picking
+*/
+const SNAPSHOT_ROWS = [
+  {shift:1,prio:1,dc:"Watson",jamKirim:"09:00",shiftKirim:1,status:"Selesai Picking",waktu:"09:43"},
+  {shift:1,prio:2,dc:"Medan",jamKirim:"11:00",shiftKirim:1,status:"Proses Picking",waktu:null},
+  {shift:1,prio:3,dc:"Pekanbaru",jamKirim:"13:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:1,prio:4,dc:"Palembang",jamKirim:"14:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:1,prio:5,dc:"Lampung",jamKirim:"14:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:1,prio:6,dc:"Bandung",jamKirim:"16:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:1,prio:7,dc:"Makassar",jamKirim:"17:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:1,dc:"Pontianak",jamKirim:"19:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:2,dc:"Jember",jamKirim:"20:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:3,dc:"Surabaya",jamKirim:"21:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:4,dc:"Kediri",jamKirim:"22:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:5,dc:"Nganjuk",jamKirim:"22:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:6,dc:"Solo",jamKirim:"00:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:2,prio:7,dc:"Semarang",jamKirim:"00:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:2,prio:8,dc:"Banjarmasin",jamKirim:"01:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:3,prio:1,dc:"Bogor",jamKirim:"03:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:3,prio:2,dc:"Banten",jamKirim:"05:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:3,prio:3,dc:"Ecommerce Teg",jamKirim:"08:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:3,prio:4,dc:"Cirebon",jamKirim:"08:00",shiftKirim:1,status:"Menunggu",waktu:null},
+];
+
+let ROWS = SNAPSHOT_ROWS;
+let lastUpdateLabel = "-";
+let isLive = false;
+
+/* ================= REALTIME SYNC (Apps Script Web App) =================
+   Sumber data: spreadsheet "Pallet manage system", sheet "Loading",
+   dilayani lewat Apps Script Web App (lihat Code.gs) supaya sheet
+   TIDAK perlu di-share publik — cukup deploy Web App dengan akses "Anyone".
+   Data ditarik ulang otomatis tiap 10 detik = near-realtime.
+*/
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLY8QAyaOrjFuh7Qh5gBm3bzGh0jWFtEPuKkhLjuLCHOgkzjzpBRB1SQk3fUqtznFosA/exec";
+const POLL_MS = 10000;
+
+function setSyncUI(state, text){
+  const el = document.getElementById("syncStatus");
+  el.className = "brand-sync" + (state ? " " + state : "");
+  document.getElementById("syncStatusText").textContent = text;
+}
+
+async function fetchLiveData(){
+  try{
+    const url = SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + "_=" + Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const raw = await res.text();
+    let data;
+    try{
+      data = JSON.parse(raw);
+    }catch(parseErr){
+      // Kalau bukan JSON valid, biasanya ini halaman login Google / error HTML dari Apps Script
+      throw new Error("Respons bukan JSON (cek deployment/akses Apps Script)");
+    }
+    if(data.error) throw new Error(data.error);
+    if(!Array.isArray(data.rows)) throw new Error("Format data tidak sesuai (rows tidak ditemukan)");
+    if(!data.rows.length) throw new Error("Data kosong di sheet");
+
+    ROWS = data.rows.map(r=>({
+      shift: parseInt(r.shift)||0,
+      prio: parseInt(r.prio)||0,
+      dc: (r.dc||"").toString().trim(),
+      jamKirim: r.jamKirim||"",
+      shiftKirim: parseInt(r.shiftKirim)||0,
+      status: (r.status || "Menunggu").toString().trim(),
+      waktu: r.waktu || null
+    }));
+    lastUpdateLabel = new Date().toLocaleTimeString("id-ID");
+    isLive = true;
+    setSyncUI("live","Realtime tersambung (Apps Script)");
+  }catch(err){
+    isLive = false;
+    setSyncUI("down","Gagal sambung: " + err.message);
+    ROWS = SNAPSHOT_ROWS;
+  }
+  render();
+}
+
+/* ================= FULLSCREEN ================= */
+document.getElementById("fsBtn").addEventListener("click",()=>{
+  if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
+  else{ document.exitFullscreen(); }
+});
+
+/* ================= TIME HELPERS ================= */
+function cycleMinutes(hhmm, anchorHour=7){
+  const [h,m] = hhmm.split(":").map(Number);
+  return (((h*60+m) - anchorHour*60) + 1440) % 1440;
+}
+function nowCycleMinutes(){
+  const d = new Date();
+  return cycleMinutes(d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0"));
+}
+// Shift ditentukan MURNI dari jam saat ini, bukan dari data:
+// Shift 1: 07:00–15:00 | Shift 2: 15:00–23:00 | Shift 3: 23:00–07:00 (lintas tengah malam)
+function activeShiftByClock(){
+  const d = new Date();
+  const mins = d.getHours()*60 + d.getMinutes();
+  if(mins>=420 && mins<900) return 1;   // 07:00–15:00
+  if(mins>=900 && mins<1380) return 2;  // 15:00–23:00
+  return 3;                             // 23:00–07:00
+}
+function isSelesai(r){ return /selesai/i.test(r.status); }
+function isProses(r){ return /proses/i.test(r.status); }
+function isMenunggu(r){ return /menunggu/i.test(r.status); }
+
+/* ================= RENDER ================= */
+function render(){
+  const activeShift = activeShiftByClock();
+  const shiftRows = ROWS.filter(r=>r.shift===activeShift).sort((a,b)=>a.prio-b.prio);
+  const nowCyc = nowCycleMinutes();
+
+  // "sedang diproses" langsung dari status kolom I = "Proses Picking"
+  const current = shiftRows.find(isProses) || null;
+  // "antrian" langsung dari status kolom I = "Menunggu", urut prioritas
+  const antrian = shiftRows.filter(isMenunggu).sort((a,b)=>a.prio-b.prio);
+  const doneRows = shiftRows.filter(isSelesai);
+
+  document.getElementById("shiftPill").textContent = "SHIFT "+activeShift;
+
+  const target = shiftRows.length;
+  const selesai = doneRows.length;
+  const proses = current ? 1 : 0;
+  const belum = antrian.length;
+  const progress = target ? Math.round((selesai/target)*1000)/10 : 0;
+
+  document.getElementById("statTarget").textContent = target;
+  document.getElementById("statSelesai").textContent = selesai;
+  document.getElementById("statProses").textContent = proses;
+  document.getElementById("statBelum").textContent = belum;
+  document.getElementById("statProgress").textContent = progress+"%";
+  document.getElementById("statBar").style.width = progress+"%";
+
+  // proses picking panel — kartu DC yang sedang dikerjakan
+  const pb = document.getElementById("prosesBody");
+  if(current){
+    pb.innerHTML = `
+      <div class="proses-card">
+        <div class="proses-row dc"><div class="k">DC</div><div class="v">${current.dc}</div></div>
+        <div class="proses-row"><div class="k">Prioritas</div><div class="v">${current.prio}</div></div>
+        <div class="proses-row"><div class="k">Jam Kirim</div><div class="v">${current.jamKirim}</div></div>
+        <div class="proses-row"><div class="k">Shift Kirim</div><div class="v">${current.shiftKirim}</div></div>
+        <div class="proses-row"><div class="k">Status</div><div class="v"><span class="status-chip"><span class="dot orange"></span>Proses Picking</span></div></div>
+      </div>
+    `;
+  } else if(target===0){
+    pb.innerHTML = `
+      <div class="proses-card">
+        <div class="proses-row dc"><div class="k">DC</div><div class="v">—</div></div>
+        <div class="proses-row"><div class="k">Status</div><div class="v"><span class="status-chip"><span class="dot blue"></span>Tidak ada DC di shift ini</span></div></div>
+      </div>
+    `;
+  } else {
+    pb.innerHTML = `
+      <div class="proses-card">
+        <div class="proses-row dc"><div class="k">DC</div><div class="v">—</div></div>
+        <div class="proses-row"><div class="k">Status</div><div class="v"><span class="status-chip"><span class="dot green"></span>Semua DC Shift Ini Selesai</span></div></div>
+      </div>
+    `;
+  }
+
+  // antrian picking (dari status "Menunggu" di kolom I) — nomor antrian mengikuti prioritas asli
+  // (jika DC prioritas 1 sedang di "Proses Picking", antrian otomatis mulai dari nomor 2, dst)
+  document.getElementById("antrianCount").textContent = antrian.length;
+  const tbody = document.getElementById("antrianTbody");
+  tbody.innerHTML = antrian.map((r,i)=>{
+    const critical = cycleMinutes(r.jamKirim) <= nowCyc;
+    const classes = [critical?'critical':'', i===0?'next-up':''].filter(Boolean).join(" ");
+    return `<tr class="${classes}">
+      <td class="no">${r.prio}</td><td class="dc">${r.dc}</td><td>${r.jamKirim}</td><td>${r.shiftKirim}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="4" style="color:var(--muted);text-align:center;">Antrian kosong</td></tr>`;
+
+  // summary table per shift
+  const shifts = [...new Set(ROWS.map(r=>r.shift))].sort((a,b)=>a-b);
+  const stbody = document.getElementById("summaryTbody");
+  stbody.innerHTML = shifts.map(s=>{
+    const rows = ROWS.filter(r=>r.shift===s);
+    const t = rows.length;
+    const sel = rows.filter(isSelesai).length;
+    const proc = rows.filter(isProses).length;
+    const wait = rows.filter(isMenunggu).length;
+    const isActiveByClock = s===activeShift;
+    const pct = t ? Math.round((sel/t)*1000)/10 : 0;
+    let badge;
+    if(sel===t && t>0) badge = `<span class="badge" style="color:var(--green)"><span class="dot green"></span>SELESAI</span>`;
+    else if(isActiveByClock) badge = `<span class="badge" style="color:var(--orange)"><span class="dot orange"></span>BERJALAN</span>`;
+    else if(sel===0) badge = `<span class="badge" style="color:var(--blue)"><span class="dot blue"></span>BELUM MULAI</span>`;
+    else badge = `<span class="badge" style="color:var(--muted)"><span class="dot" style="background:var(--muted)"></span>TERTUNDA</span>`;
+    return `<tr>
+      <td class="shift-cell">${s}</td><td>${t}</td><td>${sel}</td><td>${proc}</td><td>${wait}</td>
+      <td class="pct">${pct}%</td><td>${badge}</td>
+    </tr>`;
+  }).join("");
+
+  // daftar seluruh DC / kota hari ini, urut shift lalu prioritas
+  const allSorted = [...ROWS].sort((a,b)=> a.shift-b.shift || a.prio-b.prio);
+  const dcTbody = document.getElementById("dcListTbody");
+  dcTbody.innerHTML = allSorted.map(r=>{
+    const critical = isMenunggu(r) && cycleMinutes(r.jamKirim) <= nowCyc;
+    let rowClass = "", statusHtml = "";
+    if(isSelesai(r)){
+      rowClass = "done";
+      statusHtml = `<span class="status-chip" style="font-size:inherit"><span class="dot green"></span>Selesai Picking</span>`;
+    } else if(isProses(r)){
+      rowClass = "proses";
+      statusHtml = `<span class="status-chip" style="font-size:inherit"><span class="dot orange"></span>Proses Picking</span>`;
+    } else if(critical){
+      rowClass = "critical";
+      statusHtml = `<span class="status-chip" style="font-size:inherit"><span class="dot red"></span>Menunggu</span>`;
+    } else {
+      statusHtml = `<span class="status-chip" style="font-size:inherit"><span class="dot blue"></span>Menunggu</span>`;
+    }
+    return `<tr class="${rowClass}">
+      <td>${r.shift}</td><td>${r.prio}</td><td class="dc">${r.dc}</td><td>${r.jamKirim}</td>
+      <td>${r.shiftKirim}</td><td>${r.waktu||"—"}</td><td>${statusHtml}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7" style="text-align:center;color:var(--muted);">Belum ada data DC</td></tr>`;
+
+  document.getElementById("lastUpdate").textContent = lastUpdateLabel;
+
+  // banner
+  const banner = document.getElementById("bannerMsg");
+  if(target>0 && selesai===target){
+    banner.textContent = `✅ SHIFT ${activeShift} SELESAI — SEMUA DC SUDAH DI-PICKING`;
+  } else if(target===0){
+    banner.textContent = `ℹ️ TIDAK ADA JADWAL DC UNTUK SHIFT ${activeShift} SAAT INI`;
+  } else {
+    banner.textContent = `🚛 SHIFT ${activeShift} MASIH BERJALAN.... HATI-HATI KESELAMATAN ADALAH YANG UTAMA`;
+  }
+}
+
+function tickClock(){
+  const d = new Date();
+  document.getElementById("clockNow").textContent = d.toLocaleTimeString("id-ID",{hour12:false});
+  document.getElementById("dateNow").textContent = d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
+  render(); // re-render tiap detik supaya status "critical" tetap live
+}
+
+tickClock();
+setInterval(tickClock,1000);
+
+// Realtime langsung nyambung ke Apps Script Web App begitu halaman dibuka, tanpa perlu setting apapun.
+fetchLiveData();
+setInterval(fetchLiveData,POLL_MS);
+</script>
+</body>
+</html>
