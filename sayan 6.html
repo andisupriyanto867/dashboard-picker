@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Picking Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#070c1e;
+    --bg-1:#0b1430;
+    --bg-2:#0e1a3c;
+    --panel-body:#0c1733;
+    --line:#22355f;
+    --line-soft:#182948;
+    --blue-head:#1d4fb8;
+    --blue-head-2:#2a63d6;
+    --blue-head-3:#3f86ef;
+    --blue-hi:#173a80;
+    --gold:#f2b84b;
+    --gold-2:#ffcf70;
+    --white:#eef2fb;
+    --muted:#8492b8;
+    --green:#3ecf8e;
+    --orange:#f2994a;
+    --sky:#4fa3f7;
+    --red:#ff5c5c;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 10% 6%, #10214a 0%, transparent 45%),
+      radial-gradient(circle at 92% 92%, #0e1c40 0%, transparent 50%),
+      var(--bg-0);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    height:100vh;height:100dvh;
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    padding:clamp(4px,.7vh,10px);
+    gap:clamp(4px,.6vh,8px);
+  }
+  .eyebrow{
+    font-family:'Oswald',sans-serif;letter-spacing:.14em;text-transform:uppercase;
+    font-size:clamp(9px,1.3vh,12px);color:var(--muted);
+  }
+
+  /* ===== TOP HEADER ===== */
+  .top-header{
+    display:flex;align-items:center;gap:14px;
+    background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:clamp(5px,.9vh,10px) clamp(12px,1.4vw,20px);
+    flex:0 0 auto;
+  }
+  .logo-box{
+    width:clamp(38px,5.6vh,58px);height:clamp(38px,5.6vh,58px);
+    background:#fff;border-radius:8px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .logo-box img{width:100%;height:100%;object-fit:contain;}
+  .top-header h1{
+    font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;
+    font-size:clamp(15px,2.6vh,26px);color:var(--white);letter-spacing:.01em;line-height:1.15;
+  }
+  .top-header h2{
+    font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;
+    font-size:clamp(13px,2.2vh,21px);color:var(--gold);letter-spacing:.03em;line-height:1.15;
+  }
+
+  /* ===== SUB HEADER ===== */
+  .sub-header{
+    display:flex;align-items:stretch;gap:0;
+    background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:clamp(4px,.8vh,9px) clamp(10px,1.2vw,16px);
+    flex:0 0 auto;
+  }
+  .sub-brand{display:flex;align-items:center;gap:10px;flex:1.6;min-width:0;}
+  .sub-brand .ic{font-size:clamp(19px,3vh,30px);flex-shrink:0;}
+  .sub-brand h3{
+    font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;
+    font-size:clamp(13px,1.9vh,18px);color:var(--white);line-height:1.15;
+  }
+  .sub-brand p{
+    font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;
+    font-size:clamp(12px,1.75vh,16px);color:var(--gold);letter-spacing:.04em;line-height:1.15;
+  }
+  .sync-line{
+    display:flex;align-items:center;gap:5px;margin-top:2px;
+    font-family:'JetBrains Mono',monospace;font-size:clamp(9px,1.1vh,12px);color:var(--muted);
+  }
+  .sync-line .sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .sync-line.live{color:#59d99b;} .sync-line.live .sdot{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .sync-line.down{color:#ff8b8b;} .sync-line.down .sdot{background:var(--red);box-shadow:0 0 6px var(--red);}
+  .hdr-divider{width:1px;background:var(--line);margin:0 clamp(6px,.9vw,14px);}
+  .hdr-block{display:flex;align-items:center;gap:9px;padding:0 clamp(4px,.6vw,10px);}
+  .hdr-block .ic{font-size:clamp(17px,2.8vh,26px);}
+  .hdr-block .val{
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:clamp(16px,2.8vh,26px);color:var(--gold);letter-spacing:.02em;
+  }
+  .shift-badge .val{
+    font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.06em;
+    color:var(--bg-0);background:var(--gold);
+    padding:4px 14px;border-radius:5px;font-size:clamp(13px,1.9vh,17px);
+  }
+
+  /* ===== MAIN 3-PANEL GRID ===== */
+  .main-grid{
+    display:grid;grid-template-columns:1.15fr .95fr .8fr;
+    gap:clamp(5px,.6vw,10px);flex:1 1 42%;min-height:0;
+  }
+  .panel{
+    background:var(--panel-body);
+    border:1px solid var(--line);border-radius:var(--radius);
+    display:flex;flex-direction:column;overflow:hidden;min-height:0;
+  }
+  .panel-title{
+    font-family:'Oswald',sans-serif;font-weight:700;text-align:center;
+    letter-spacing:.1em;text-transform:uppercase;
+    font-size:clamp(13px,1.9vh,18px);
+    padding:clamp(6px,1.1vh,11px);color:#fff;
+    background:linear-gradient(180deg,var(--blue-head-2),var(--blue-head));
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    flex:0 0 auto;
+  }
+  .panel-title.selesai{background:linear-gradient(180deg,var(--blue-head-3),var(--blue-head-2));}
+  .panel-title .count-badge{
+    font-family:'JetBrains Mono',monospace;font-size:clamp(11px,1.4vh,13px);
+    background:rgba(255,255,255,.18);color:#fff;
+    padding:2px 10px;border-radius:20px;letter-spacing:0;
+  }
+
+  /* list tables (antrian & selesai) */
+  .list-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 clamp(6px,.7vw,10px);min-height:0;}
+  table{width:100%;border-collapse:collapse;}
+  .list-body th{
+    font-family:'Oswald',sans-serif;color:var(--muted);text-transform:uppercase;
+    font-size:clamp(10px,1.35vh,12px);letter-spacing:.08em;text-align:left;
+    padding:clamp(5px,.9vh,8px) 6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel-body);
+  }
+  .list-body td{
+    padding:clamp(5px,1vh,10px) 6px;font-size:clamp(13px,1.8vh,17px);
+    border-bottom:1px solid var(--line-soft);font-family:'Inter',sans-serif;font-weight:500;
+  }
+  .list-body td.dc{font-family:'Oswald',sans-serif;font-weight:600;}
+  .list-body td.no{color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .list-body tr.next-up td{background:var(--blue-hi);color:var(--gold-2);font-weight:700;}
+  .list-body tr.next-up td.no{color:var(--gold);}
+  .list-body tr.next-up td.dc{color:var(--gold-2);}
+  .list-body tr.critical td{color:var(--red);}
+  .list-body tr.critical.next-up td{color:var(--red);background:rgba(255,92,92,.16);}
+  .list-body tr.done-row td{color:var(--green);}
+  .empty-row td{text-align:center;color:var(--muted);padding:12px 6px;font-size:clamp(12px,1.5vh,14px);}
+
+  /* Proses picking card */
+  .proses-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(6px,1.2vh,16px);min-height:0;}
+  .proses-row{display:flex;align-items:baseline;gap:12px;border-bottom:1px dashed var(--line-soft);padding:clamp(5px,1.15vh,13px) 4px;}
+  .proses-row:last-child{border-bottom:none;}
+  .proses-row .k{
+    font-family:'Oswald',sans-serif;color:var(--muted);letter-spacing:.08em;
+    text-transform:uppercase;font-size:clamp(11px,1.5vh,14px);width:38%;flex-shrink:0;
+  }
+  .proses-row .v{font-family:'Oswald',sans-serif;font-weight:600;font-size:clamp(15px,2.2vh,21px);color:var(--white);}
+  .proses-row.dc .v{font-size:clamp(22px,3.8vh,38px);color:var(--gold);font-weight:700;}
+  .proses-row.jam .v{font-size:clamp(19px,3.3vh,33px);color:var(--gold-2);font-weight:700;font-family:'JetBrains Mono',monospace;}
+  .status-chip{display:inline-flex;align-items:center;gap:7px;font-family:'Oswald',sans-serif;font-weight:600;font-size:clamp(13px,1.9vh,17px);}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .dot.green{background:var(--green);}
+  .dot.orange{background:var(--orange);box-shadow:0 0 8px var(--orange);animation:pulse 1.6s infinite;}
+  .dot.blue{background:var(--sky);}
+  .dot.red{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.2s infinite;}
+  .dot.muted{background:var(--muted);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+
+  /* ===== SUMMARY ROW ===== */
+  .summary-row{
+    display:grid;grid-template-columns:3fr 1.05fr;
+    gap:clamp(5px,.6vw,10px);flex:1 1 40%;min-height:0;
+  }
+  .summary-panel, .info-panel{
+    background:var(--panel-body);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;display:flex;flex-direction:column;min-height:0;
+  }
+  .summary-panel table{width:100%;}
+  .summary-panel th{
+    font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.06em;
+    font-size:clamp(10px,1.35vh,12px);color:#fff;text-align:center;
+    padding:clamp(6px,1.1vh,10px) 4px;
+    background:linear-gradient(180deg,var(--blue-head-2),var(--blue-head));
+  }
+  .summary-panel td{
+    text-align:center;padding:clamp(7px,1.5vh,14px) 4px;border-bottom:1px solid var(--line-soft);
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(14px,2vh,19px);
+  }
+  .summary-panel tr:last-child td{border-bottom:none;}
+  .summary-panel td.shift-cell{font-family:'Oswald',sans-serif;font-size:clamp(15px,2.2vh,21px);color:var(--gold);}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:'Oswald',sans-serif;font-weight:600;font-size:clamp(11px,1.45vh,13px);text-transform:uppercase;letter-spacing:.04em;}
+
+  .info-body{flex:1;overflow-y:auto;padding:clamp(6px,1.1vh,12px);display:flex;flex-direction:column;gap:clamp(5px,.9vh,10px);min-height:0;}
+  .info-sec{border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.02);padding:clamp(5px,1vh,9px) clamp(8px,.9vw,12px);}
+  .info-title{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.07em;text-transform:uppercase;font-size:clamp(10px,1.35vh,12px);color:var(--gold);margin-bottom:5px;}
+  .info-item{display:flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-size:clamp(11px,1.55vh,14px);color:var(--white);padding:3px 0;}
+  .info-item .k{color:var(--muted);font-family:'Oswald',sans-serif;font-size:clamp(10px,1.35vh,12px);text-transform:uppercase;min-width:62px;}
+  .info-item .v{font-family:'JetBrains Mono',monospace;font-size:clamp(11px,1.55vh,14px);color:var(--gold-2);}
+
+  /* ===== NOTE LINE ===== */
+  .note-line{
+    display:flex;align-items:center;gap:8px;flex:0 0 auto;
+    font-family:'Inter',sans-serif;font-size:clamp(11px,1.45vh,14px);color:var(--muted);
+    padding:1px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .note-line b{color:var(--red);font-weight:700;}
+
+  /* ===== BANNER ===== */
+  .banner{
+    flex:0 0 auto;
+    background:linear-gradient(90deg,rgba(29,79,184,.12),rgba(29,79,184,.28),rgba(29,79,184,.12));
+    border:1px solid var(--blue-head);border-radius:var(--radius);
+    text-align:center;padding:clamp(6px,1.3vh,11px);
+    font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.05em;
+    font-size:clamp(13px,2vh,18px);color:var(--gold);text-transform:uppercase;
+  }
+
+  /* ===== FAB CONTROLS ===== */
+  .fab{position:fixed;right:14px;bottom:14px;display:flex;gap:8px;z-index:50;}
+  .fab button{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--white);
+    font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.05em;
+    padding:7px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;
+    transition:.15s;opacity:.85;
+  }
+  .fab button:hover{border-color:var(--gold);color:var(--gold);opacity:1;}
+  .fab button.on{border-color:var(--green);color:var(--green);}
+  ::-webkit-scrollbar{width:7px;height:7px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+  @media (max-width:960px){
+    .top-header h1{font-size:13px;} .top-header h2{font-size:11px;}
+    .sub-header{flex-wrap:wrap;}
+    .main-grid{grid-template-columns:1fr;flex:1 1 auto;}
+    .summary-row{grid-template-columns:1fr;}
+    body{overflow-y:auto;}
+  }
+</style>
+</head>
+<body>
+
+<div class="top-header">
+  <div class="logo-box" id="logoBox">
+    <img src="https://i.supaimg.com/2c2fe634-0778-4567-93bf-17d826ecd3d2/da06317c-66aa-4cb4-9dfc-8e3510274c4a.jpg" alt="Logo" onerror="this.remove();">
+  </div>
+  <div>
+    <h1>PT Paragon Technology And Innovation</h1>
+    <h2>National Distribution Center</h2>
+  </div>
+</div>
+
+<div class="sub-header">
+  <div class="sub-brand">
+    <div class="ic">🏛️</div>
+    <div>
+      <h3>Warehouse Picking</h3>
+      <p>Control Tower</p>
+      <div class="sync-line" id="syncStatus"><span class="sdot"></span><span id="syncStatusText">Menyambungkan...</span></div>
+    </div>
+  </div>
+  <div class="hdr-divider"></div>
+  <div class="hdr-block shift-badge">
+    <div class="ic">📋</div>
+    <div>
+      <div class="eyebrow">Shift Aktif</div>
+      <span class="val" id="shiftPill">—</span>
+    </div>
+  </div>
+  <div class="hdr-divider"></div>
+  <div class="hdr-block">
+    <div class="ic">⏱️</div>
+    <div>
+      <div class="eyebrow">Jam Sekarang</div>
+      <span class="val" id="clockNow">--:--:--</span>
+    </div>
+  </div>
+  <div class="hdr-divider"></div>
+  <div class="hdr-block">
+    <div class="ic">📅</div>
+    <div>
+      <div class="eyebrow">Tanggal</div>
+      <span class="val" id="dateNow" style="font-size:clamp(11px,1.8vh,17px);">--</span>
+    </div>
+  </div>
+</div>
+
+<section class="main-grid">
+  <div class="panel">
+    <div class="panel-title">Antrian Picking <span class="count-badge" id="antrianCount">0</span></div>
+    <div class="list-body">
+      <table>
+        <thead><tr><th>Prioritas</th><th>DC</th><th>Jam Kirim</th><th>Shift Kirim</th></tr></thead>
+        <tbody id="antrianTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Proses Picking</div>
+    <div class="proses-body" id="prosesBody"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title selesai">Selesai Picking <span class="count-badge" id="selesaiCount">0</span></div>
+    <div class="list-body">
+      <table>
+        <thead><tr><th>DC</th><th>Jam</th></tr></thead>
+        <tbody id="selesaiTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="summary-row">
+  <div class="summary-panel">
+    <table>
+      <thead>
+        <tr>
+          <th>📋 Shift</th><th>Target DC</th><th>Picking Selesai</th><th>Sedang Picking</th>
+          <th>Menunggu</th><th>Progress</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="summaryTbody"></tbody>
+    </table>
+  </div>
+  <div class="info-panel">
+    <div class="panel-title">Informasi Shift</div>
+    <div class="info-body">
+      <div class="info-sec">
+        <div class="info-title">Status Picking</div>
+        <div class="info-item"><span class="dot green"></span> Selesai Picking</div>
+        <div class="info-item"><span class="dot orange"></span> Sedang Proses</div>
+        <div class="info-item"><span class="dot blue"></span> Menunggu Antrian</div>
+        <div class="info-item"><span class="dot red"></span> Menunggu, Jam Lewat</div>
+      </div>
+      <div class="info-sec">
+        <div class="info-title">Jadwal Shift</div>
+        <div class="info-item"><span class="k">Shift 1</span><span class="v">07:00–15:00</span></div>
+        <div class="info-item"><span class="k">Shift 2</span><span class="v">15:00–23:00</span></div>
+        <div class="info-item"><span class="k">Shift 3</span><span class="v">23:00–07:00</span></div>
+      </div>
+      <div class="info-sec">
+        <div class="info-title">Update Terakhir</div>
+        <div class="info-item"><span class="v" id="lastUpdate">-</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="note-line">🔴 <b>CRITICAL</b>: <span id="criticalNote">Tidak ada antrian kritis</span> &nbsp;|&nbsp; Catatan: <span id="catatanNote">-</span></div>
+
+<div class="banner" id="bannerMsg">🚛 MEMUAT DATA...</div>
+
+<div class="fab">
+  <button id="voiceBtn">🔇 Suara: OFF</button>
+  <button id="fsBtn">⛶ Fullscreen</button>
+</div>
+
+<script>
+/* ================= DATA SNAPSHOT (fallback jika Apps Script belum bisa dihubungi) ================= */
+const SNAPSHOT_ROWS = [
+  {shift:1,prio:1,dc:"Watson",jamKirim:"09:00",shiftKirim:1,status:"Selesai Picking",waktu:"09:43"},
+  {shift:1,prio:2,dc:"Medan",jamKirim:"11:00",shiftKirim:1,status:"Proses Picking",waktu:null},
+  {shift:1,prio:3,dc:"Pekanbaru",jamKirim:"13:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:1,prio:4,dc:"Palembang",jamKirim:"14:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:1,prio:5,dc:"Lampung",jamKirim:"14:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:1,prio:6,dc:"Bandung",jamKirim:"16:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:1,prio:7,dc:"Makassar",jamKirim:"17:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:1,dc:"Pontianak",jamKirim:"19:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:2,dc:"Jember",jamKirim:"20:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:3,dc:"Surabaya",jamKirim:"21:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:4,dc:"Kediri",jamKirim:"22:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:5,dc:"Nganjuk",jamKirim:"22:00",shiftKirim:2,status:"Menunggu",waktu:null},
+  {shift:2,prio:6,dc:"Solo",jamKirim:"00:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:2,prio:7,dc:"Semarang",jamKirim:"00:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:2,prio:8,dc:"Banjarmasin",jamKirim:"01:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:3,prio:1,dc:"Bogor",jamKirim:"03:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:3,prio:2,dc:"Banten",jamKirim:"05:00",shiftKirim:3,status:"Menunggu",waktu:null},
+  {shift:3,prio:3,dc:"Ecommerce Teg",jamKirim:"08:00",shiftKirim:1,status:"Menunggu",waktu:null},
+  {shift:3,prio:4,dc:"Cirebon",jamKirim:"08:00",shiftKirim:1,status:"Menunggu",waktu:null},
+];
+
+let ROWS = SNAPSHOT_ROWS;
+let lastUpdateLabel = "-";
+
+/* ================= SUARA (Web Speech API) =================
+   Prinsip: setiap kali data ditarik ulang (tiap 5 detik), kita bandingkan
+   DC mana saja yang statusnya "Selesai Picking" SEKARANG vs sebelumnya.
+   DC baru yang muncul di daftar selesai -> LANGSUNG diumumkan saat itu juga,
+   tidak menunggu proses berikutnya mulai. Ini membuat pengumuman "selesai"
+   selalu real-time walau ada beberapa DC selesai berurutan cepat.
+*/
+let voiceEnabled = false;
+let announcedDoneKeys = new Set();   // DC yang sudah diumumkan selesai
+let announcedProsesId = null;        // DC yang sudah diumumkan mulai proses
+let announcedAntrianId = null;       // DC teratas antrian yang sudah diumumkan
+let firstLoad = true;                // supaya saat load pertama tidak "membanjiri" suara utk semua yg sudah selesai sebelumnya
+
+function speak(text){
+  if(!voiceEnabled) return;
+  if(!("speechSynthesis" in window)) return;
+  try{
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "id-ID"; utter.rate = 0.98; utter.pitch = 1;
+    window.speechSynthesis.speak(utter);
+  }catch(e){}
+}
+
+const voiceBtn = document.getElementById("voiceBtn");
+voiceBtn.addEventListener("click", ()=>{
+  voiceEnabled = !voiceEnabled;
+  voiceBtn.textContent = voiceEnabled ? "🔊 Suara: ON" : "🔇 Suara: OFF";
+  voiceBtn.classList.toggle("on", voiceEnabled);
+  if(voiceEnabled){
+    window.speechSynthesis.cancel();
+    speak("Suara pengumuman picking aktif");
+    // reset penanda supaya kondisi SAAT INI (current & antrian selanjutnya) langsung diumumkan ulang,
+    // tapi DC yang SUDAH selesai sebelum suara dinyalakan tidak ikut diumumkan retroaktif
+    announcedProsesId = null;
+    announcedAntrianId = null;
+  } else {
+    window.speechSynthesis.cancel();
+  }
+});
+
+/* ================= REALTIME SYNC (Apps Script Web App) ================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLY8QAyaOrjFuh7Qh5gBm3bzGh0jWFtEPuKkhLjuLCHOgkzjzpBRB1SQk3fUqtznFosA/exec";
+const POLL_MS = 5000;
+
+function setSyncUI(state, text){
+  const el = document.getElementById("syncStatus");
+  el.className = "sync-line" + (state ? " " + state : "");
+  document.getElementById("syncStatusText").textContent = text;
+}
+
+async function fetchLiveData(){
+  try{
+    const url = SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + "_=" + Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const raw = await res.text();
+    let data;
+    try{ data = JSON.parse(raw); }
+    catch(parseErr){ throw new Error("Respons bukan JSON (cek deployment/akses Apps Script)"); }
+    if(data.error) throw new Error(data.error);
+    if(!Array.isArray(data.rows)) throw new Error("Format data tidak sesuai (rows tidak ditemukan)");
+    if(!data.rows.length) throw new Error("Data kosong di sheet");
+
+    ROWS = data.rows.map(r=>({
+      shift: parseInt(r.shift)||0,
+      prio: parseInt(r.prio)||0,
+      dc: (r.dc||"").toString().trim(),
+      jamKirim: r.jamKirim||"",
+      shiftKirim: parseInt(r.shiftKirim)||0,
+      status: (r.status || "Menunggu").toString().trim(),
+      waktu: r.waktu || null
+    }));
+    lastUpdateLabel = new Date().toLocaleTimeString("id-ID");
+    setSyncUI("live","Realtime tersambung (Apps Script)");
+  }catch(err){
+    setSyncUI("down","Gagal sambung: " + err.message);
+    ROWS = SNAPSHOT_ROWS;
+  }
+  render();
+}
+
+/* ================= FULLSCREEN ================= */
+document.getElementById("fsBtn").addEventListener("click",()=>{
+  if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
+  else{ document.exitFullscreen(); }
+});
+
+/* ================= TIME HELPERS ================= */
+function cycleMinutes(hhmm, anchorHour=7){
+  const [h,m] = hhmm.split(":").map(Number);
+  return (((h*60+m) - anchorHour*60) + 1440) % 1440;
+}
+function nowCycleMinutes(){
+  const d = new Date();
+  return cycleMinutes(d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0"));
+}
+function activeShiftByClock(){
+  const d = new Date();
+  const mins = d.getHours()*60 + d.getMinutes();
+  if(mins>=420 && mins<900) return 1;
+  if(mins>=900 && mins<1380) return 2;
+  return 3;
+}
+function isSelesai(r){ return /selesai/i.test(r.status); }
+function isProses(r){ return /proses/i.test(r.status); }
+function isMenunggu(r){ return /menunggu/i.test(r.status); }
+function rowKey(r){ return r.shift+"-"+r.prio+"-"+r.dc; }
+
+/* ================= RENDER ================= */
+function render(){
+  const activeShift = activeShiftByClock();
+  const shiftRows = ROWS.filter(r=>r.shift===activeShift).sort((a,b)=>a.prio-b.prio);
+  const nowCyc = nowCycleMinutes();
+
+  const current = shiftRows.find(isProses) || null;
+  const antrian = shiftRows.filter(isMenunggu).sort((a,b)=>a.prio-b.prio);
+  const doneRows = shiftRows.filter(isSelesai).sort((a,b)=>a.prio-b.prio);
+
+  document.getElementById("shiftPill").textContent = "SHIFT "+activeShift;
+  const target = shiftRows.length;
+  const selesai = doneRows.length;
+
+  /* ---- Suara 1: DETEKSI SELESAI (langsung, berbasis seluruh data, bukan cuma yg lagi "current") ---- */
+  const currentDoneKeys = new Set(ROWS.filter(isSelesai).map(rowKey));
+  if(!firstLoad){
+    currentDoneKeys.forEach(k=>{
+      if(!announcedDoneKeys.has(k)){
+        const r = ROWS.find(x=>rowKey(x)===k);
+        if(r) speak("Selesai picking, D C " + r.dc + ". Kerja bagus.");
+      }
+    });
+  }
+  announcedDoneKeys = currentDoneKeys;
+  firstLoad = false;
+
+  /* ---- Suara 2: Mulai proses picking DC berikutnya ---- */
+  const newCurrentId = current ? rowKey(current) : null;
+  if(newCurrentId){
+    if(newCurrentId !== announcedProsesId){
+      announcedProsesId = newCurrentId;
+      speak("Mulai proses picking, D C " + current.dc + ", jam kirim " + current.jamKirim + ", shift kirim " + current.shiftKirim);
+    }
+  } else { announcedProsesId = null; }
+
+  /* ---- Suara 3: Antrian berikutnya ---- */
+  if(antrian.length > 0){
+    const nu = antrian[0];
+    const nuId = rowKey(nu);
+    if(nuId !== announcedAntrianId){
+      announcedAntrianId = nuId;
+      speak("Antrian picking selanjutnya, nomor urut " + nu.prio + ", D C " + nu.dc + ", jam kirim " + nu.jamKirim + ", shift kirim " + nu.shiftKirim);
+    }
+  } else { announcedAntrianId = null; }
+
+  /* ---- Panel Antrian Picking ---- */
+  document.getElementById("antrianCount").textContent = antrian.length;
+  const antrianTbody = document.getElementById("antrianTbody");
+  antrianTbody.innerHTML = antrian.map((r,i)=>{
+    const critical = cycleMinutes(r.jamKirim) <= nowCyc;
+    const classes = [critical?'critical':'', i===0?'next-up':''].filter(Boolean).join(" ");
+    return `<tr class="${classes}">
+      <td class="no">${r.prio}</td><td class="dc">${r.dc}</td><td>${r.jamKirim}</td><td>${r.shiftKirim}</td>
+    </tr>`;
+  }).join("") || `<tr class="empty-row"><td colspan="4">Antrian kosong</td></tr>`;
+
+  /* ---- Panel Proses Picking ---- */
+  const pb = document.getElementById("prosesBody");
+  if(current){
+    pb.innerHTML = `
+      <div class="proses-row dc"><div class="k">DC</div><div class="v">${current.dc}</div></div>
+      <div class="proses-row"><div class="k">Prioritas</div><div class="v">${current.prio}</div></div>
+      <div class="proses-row jam"><div class="k">Jam Kirim</div><div class="v">${current.jamKirim}</div></div>
+      <div class="proses-row"><div class="k">Shift Kirim</div><div class="v">${current.shiftKirim}</div></div>
+      <div class="proses-row"><div class="k">Status</div><div class="v"><span class="status-chip"><span class="dot orange"></span>Proses Picking</span></div></div>
+    `;
+  } else if(target===0){
+    pb.innerHTML = `
+      <div class="proses-row dc"><div class="k">DC</div><div class="v">—</div></div>
+      <div class="proses-row"><div class="k">Status</div><div class="v"><span class="status-chip"><span class="dot blue"></span>Tidak ada DC di shift ini</span></div></div>
+    `;
+  } else {
+    pb.innerHTML = `
+      <div class="proses-row dc"><div class="k">DC</div><div class="v">—</div></div>
+      <div class="proses-row"><div class="k">Status</div><div class="v"><span class="status-chip"><span class="dot green"></span>Semua DC Shift Ini Selesai</span></div></div>
+    `;
+  }
+
+  /* ---- Panel Selesai Picking (terbaru di atas) ---- */
+  document.getElementById("selesaiCount").textContent = doneRows.length;
+  const selesaiTbody = document.getElementById("selesaiTbody");
+  const doneSorted = [...doneRows].reverse();
+  selesaiTbody.innerHTML = doneSorted.map(r=>`
+      <tr class="done-row"><td class="dc">${r.dc}</td><td>${r.waktu||"—"}</td></tr>
+    `).join("") || `<tr class="empty-row"><td colspan="2">Belum ada yang selesai</td></tr>`;
+
+  /* ---- Summary Table per Shift ---- */
+  const shifts = [...new Set(ROWS.map(r=>r.shift))].sort((a,b)=>a-b);
+  const stbody = document.getElementById("summaryTbody");
+  stbody.innerHTML = shifts.map(s=>{
+    const rows = ROWS.filter(r=>r.shift===s);
+    const t = rows.length;
+    const sel = rows.filter(isSelesai).length;
+    const proc = rows.filter(isProses).length;
+    const wait = rows.filter(isMenunggu).length;
+    const isActiveByClock = s===activeShift;
+    const pct = t ? Math.round((sel/t)*1000)/10 : 0;
+    let badge;
+    if(sel===t && t>0) badge = `<span class="badge" style="color:var(--green)"><span class="dot green"></span>SELESAI</span>`;
+    else if(isActiveByClock) badge = `<span class="badge" style="color:var(--orange)"><span class="dot orange"></span>BERJALAN</span>`;
+    else if(sel===0) badge = `<span class="badge" style="color:var(--sky)"><span class="dot blue"></span>BELUM MULAI</span>`;
+    else badge = `<span class="badge" style="color:var(--muted)"><span class="dot muted"></span>TERTUNDA</span>`;
+    return `<tr>
+      <td class="shift-cell">${s}</td><td>${t}</td><td>${sel}</td><td>${proc}</td><td>${wait}</td>
+      <td>${pct}%</td><td>${badge}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("lastUpdate").textContent = lastUpdateLabel;
+
+  /* ---- Catatan / Critical Note ----
+     Diambil langsung dari baris PALING ATAS di panel Antrian Picking
+     (antrian[0], yaitu yang ditandai "next-up"). Kalau jam kirimnya
+     sudah lewat dari jam sekarang -> ditandai CRITICAL. */
+  const topAntrian = antrian[0] || null;
+  if(topAntrian){
+    const isCritical = cycleMinutes(topAntrian.jamKirim) <= nowCyc;
+    document.getElementById("criticalNote").textContent = isCritical
+      ? `${topAntrian.dc} Menunggu Antrian (Jam Kirim ${topAntrian.jamKirim} sudah lewat)`
+      : `Tidak ada antrian kritis (antrian selanjutnya: ${topAntrian.dc}, jam kirim ${topAntrian.jamKirim})`;
+  } else {
+    document.getElementById("criticalNote").textContent = "Tidak ada antrian kritis";
+  }
+  document.getElementById("catatanNote").textContent = "-";
+
+  /* ---- Banner ---- */
+  const banner = document.getElementById("bannerMsg");
+  if(target>0 && selesai===target){
+    banner.textContent = `✅ SHIFT ${activeShift} SELESAI — SEMUA DC SUDAH DI-PICKING`;
+  } else if(target===0){
+    banner.textContent = `ℹ️ TIDAK ADA JADWAL DC UNTUK SHIFT ${activeShift} SAAT INI`;
+  } else {
+    banner.textContent = `🚛 PENURUNAN DC SHIFT ${activeShift} SEDANG BERJALAN`;
+  }
+}
+
+function tickClock(){
+  const d = new Date();
+  document.getElementById("clockNow").textContent = d.toLocaleTimeString("id-ID",{hour12:false});
+  document.getElementById("dateNow").textContent = d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+
+tickClock();
+setInterval(tickClock,1000);
+fetchLiveData();
+setInterval(fetchLiveData,POLL_MS);
+</script>
+</body>
+</html>
